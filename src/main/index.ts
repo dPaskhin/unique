@@ -2,6 +2,7 @@ interface IOptions<Result> {
   store?: Set<Result>;
   maxRetries?: number;
   maxTime?: number;
+  exclude?: Result[];
 }
 
 function createErrorMessage(
@@ -23,11 +24,14 @@ Try adjusting maxTime or maxRetries parameters.`;
 
 export function uniqueFactory<Args, Result>(
   fn: (...args: Args[]) => Result,
-  options?: IOptions<Result>
+  options: IOptions<Result> = {}
 ): (...args: Args[]) => Result {
-  const store = options?.store || new Set<Result>();
-  const maxTries = options?.maxRetries ?? 50;
-  const maxTime = options?.maxTime ?? 50;
+  const {
+    store = new Set<Result>(),
+    maxRetries = 50,
+    maxTime = 50,
+    exclude = [],
+  } = options;
 
   return function (...args) {
     let result: Result;
@@ -49,10 +53,10 @@ export function uniqueFactory<Args, Result>(
         );
       }
 
-      if (currentIterations >= maxTries) {
+      if (currentIterations >= maxRetries) {
         throw new Error(
           createErrorMessage(
-            'Exceeded maxTries: ' + maxTries,
+            'Exceeded maxTries: ' + maxRetries,
             store.size,
             duration,
             currentIterations
@@ -63,7 +67,7 @@ export function uniqueFactory<Args, Result>(
       result = fn.apply(null, args);
       currentIterations++;
 
-      if (!store.has(result)) {
+      if (!store.has(result) && !exclude.includes(result)) {
         store.add(result);
         break;
       }

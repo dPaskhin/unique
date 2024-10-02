@@ -20,6 +20,7 @@
       "default": "./lib/index.cjs"
     }
   },
+  "sideEffects": false,
   "homepage": "https://github.com/dPaskhin/unique",
   "bugs": {
     "url": "https://github.com/dPaskhin/unique/issues"
