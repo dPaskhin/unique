@@ -1,0 +1,58 @@
+{
+  "name": "@dpaskhin/unique",
+  "version": "0.0.0",
+  "description": "Ensures unique values by rejecting duplicates.",
+  "keywords": [
+    "uniqueness",
+    "deduplication",
+    "retry",
+    "filtering",
+    "generation"
+  ],
+  "files": [
+    "lib"
+  ],
+  "main": "./lib/index.js",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": "./lib/index.js",
+      "default": "./lib/index.cjs"
+    }
+  },
+  "homepage": "https://github.com/dPaskhin/unique",
+  "bugs": {
+    "url": "https://github.com/dPaskhin/unique/issues"
+  },
+  "author": "Dmitrii Paskhin <d.pasxin@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dPaskhin/unique.git"
+  },
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsup",
+    "ci": "npm run build && npm run check-format && npm run check-exports && npm run lint && npm run test-coverage",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test-coverage": "vitest run --coverage",
+    "dev": "vitest",
+    "lint": "tsc",
+    "check-format": "prettier --check .",
+    "check-exports": "attw --pack .",
+    "local-release": "changeset version && changeset publish",
+    "prepublishOnly": "npm run ci"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.16.4",
+    "@changesets/cli": "^2.27.8",
+    "@faker-js/faker": "^9.0.3",
+    "@vitest/coverage-v8": "^2.1.1",
+    "prettier": "^3.3.3",
+    "terser": "^5.34.1",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.1"
+  }
+}
