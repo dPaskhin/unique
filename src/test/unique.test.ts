@@ -85,6 +85,71 @@ describe('unique', () => {
     });
   });
 
+  describe('uniqueFactory with exclude option', () => {
+    it('should exclude specified values from results', () => {
+      const mockFn = vi
+        .fn()
+        .mockReturnValueOnce('a')
+        .mockReturnValueOnce('b')
+        .mockReturnValueOnce('c');
+
+      const exclude = ['a', 'b'];
+
+      const uniqueGen = uniqueFactory(mockFn, { exclude });
+
+      const result = uniqueGen();
+
+      expect(result).toBe('c');
+    });
+
+    it('should not add excluded values to the store', () => {
+      const mockFn = vi
+        .fn()
+        .mockReturnValueOnce('x')
+        .mockReturnValueOnce('y')
+        .mockReturnValueOnce('z');
+
+      const exclude = ['x', 'y'];
+      const store = new Set();
+
+      const uniqueGen = uniqueFactory(mockFn, { store, exclude });
+
+      const result = uniqueGen();
+
+      expect(store.has('x')).toBe(false);
+      expect(store.has('y')).toBe(false);
+      expect(store.has(result)).toBe(true);
+    });
+
+    it('should retry until a non-excluded value is found', () => {
+      const mockFn = vi
+        .fn()
+        .mockReturnValueOnce('excluded')
+        .mockReturnValueOnce('excluded')
+        .mockReturnValueOnce('allowed');
+
+      const exclude = ['excluded'];
+
+      const uniqueGen = uniqueFactory(mockFn, { exclude });
+
+      const result = uniqueGen();
+
+      expect(result).toBe('allowed');
+      expect(mockFn).toHaveBeenCalledTimes(3);
+    });
+
+    it('should throw error after max retries with excluded values', () => {
+      const mockFn = vi.fn().mockReturnValue('excluded');
+
+      const exclude = ['excluded'];
+
+      const uniqueGen = uniqueFactory(mockFn, { maxRetries: 3, exclude });
+
+      expect(() => uniqueGen()).toThrow('Exceeded maxTries: 3');
+      expect(mockFn).toHaveBeenCalledTimes(3);
+    });
+  });
+
   describe('global', () => {
     it('should return a unique value with default store', () => {
       const mockFn = vi.fn().mockReturnValueOnce(1).mockReturnValueOnce(2);
