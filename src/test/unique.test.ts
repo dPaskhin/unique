@@ -1,36 +1,85 @@
 import { faker } from '@faker-js/faker';
-import { describe, expect, it, vi } from 'vitest';
-import { unique, uniqueFactory } from '../main';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { GLOBAL_STORE, unique, uniqueFactory } from '../main';
 
 describe('unique', () => {
   describe('uniqueFactory', () => {
     it('should generate unique fake names', () => {
-      const uniqueNameGen = uniqueFactory(faker.person.firstName);
+      const store = new Set();
+
+      const uniqueNameGen = uniqueFactory(faker.person.firstName, { store });
 
       expect(uniqueNameGen()).not.toBe(uniqueNameGen());
       expect(uniqueNameGen()).not.toBe(uniqueNameGen());
       expect(uniqueNameGen()).not.toBe(uniqueNameGen());
       expect(uniqueNameGen()).not.toBe(uniqueNameGen());
       expect(uniqueNameGen()).not.toBe(uniqueNameGen());
+
+      expect(store.size).toBe(10);
     });
 
     it('should return unique values', () => {
-      const mockFn = vi
-        .fn()
-        .mockReturnValueOnce(1)
-        .mockReturnValueOnce(2)
-        .mockReturnValueOnce(3);
+      const mockFn = vi.fn().mockImplementation(() => {
+        return faker.helpers.arrayElement([1, 2, 3, 4, 5, 6, 7]);
+      });
 
-      const uniqueGen = uniqueFactory(mockFn);
+      const store = new Set();
 
-      const result1 = uniqueGen();
-      const result2 = uniqueGen();
-      const result3 = uniqueGen();
+      const uniqueGen = uniqueFactory(mockFn, { store });
 
-      expect(result1).toBe(1);
-      expect(result2).toBe(2);
-      expect(result3).toBe(3);
-      expect(mockFn).toHaveBeenCalledTimes(3);
+      invokeNTimes(uniqueGen, 3);
+
+      expect(store.size).toBe(3);
+      expect(mockFn.mock.calls.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('should add values to the store', () => {
+      const mockFn = vi.fn().mockImplementation(() => {
+        return faker.helpers.arrayElement(['a', 'b', 'c']);
+      });
+
+      const store = new Set();
+
+      const uniqueGen = uniqueFactory(mockFn, { store });
+
+      invokeNTimes(uniqueGen, 3);
+
+      expect(store.size).toBe(3);
+      expect(store.has('a')).toBe(true);
+      expect(store.has('b')).toBe(true);
+      expect(store.has('c')).toBe(true);
+      expect(mockFn.mock.calls.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('should return unique object values', () => {
+      const user1 = {
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+      };
+      const user2 = {
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+      };
+      const user3 = {
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+      };
+
+      const mockFn = vi.fn().mockImplementation(() => {
+        return faker.helpers.arrayElement([user1, user2, user3]);
+      });
+
+      const store = new Set();
+
+      const uniqueGen = uniqueFactory(mockFn, { store });
+
+      invokeNTimes(uniqueGen, 3);
+
+      expect(store.size).toBe(3);
+      expect(store.has(user1)).toBe(true);
+      expect(store.has(user2)).toBe(true);
+      expect(store.has(user3)).toBe(true);
+      expect(mockFn.mock.calls.length).toBeGreaterThanOrEqual(3);
     });
 
     it('should throw error after max retries exceeded', () => {
@@ -63,79 +112,25 @@ describe('unique', () => {
 
       vi.useRealTimers();
     });
-
-    it('should add values to the store', () => {
-      const mockFn = vi
-        .fn()
-        .mockReturnValueOnce('a')
-        .mockReturnValueOnce('b')
-        .mockReturnValueOnce('c');
-
-      const store = new Set();
-      const uniqueGen = uniqueFactory(mockFn, { store });
-
-      uniqueGen();
-      uniqueGen();
-      uniqueGen();
-
-      expect(store.size).toBe(3);
-      expect(store.has('a')).toBe(true);
-      expect(store.has('b')).toBe(true);
-      expect(store.has('c')).toBe(true);
-    });
   });
 
   describe('uniqueFactory with exclude option', () => {
     it('should exclude specified values from results', () => {
-      const mockFn = vi
-        .fn()
-        .mockReturnValueOnce('a')
-        .mockReturnValueOnce('b')
-        .mockReturnValueOnce('c');
+      const mockFn = vi.fn().mockImplementation(() => {
+        return faker.helpers.arrayElement(['a', 'b', 'c']);
+      });
 
       const exclude = ['a', 'b'];
-
-      const uniqueGen = uniqueFactory(mockFn, { exclude });
-
-      const result = uniqueGen();
-
-      expect(result).toBe('c');
-    });
-
-    it('should not add excluded values to the store', () => {
-      const mockFn = vi
-        .fn()
-        .mockReturnValueOnce('x')
-        .mockReturnValueOnce('y')
-        .mockReturnValueOnce('z');
-
-      const exclude = ['x', 'y'];
       const store = new Set();
 
-      const uniqueGen = uniqueFactory(mockFn, { store, exclude });
+      const uniqueGen = uniqueFactory(mockFn, { exclude, store });
 
       const result = uniqueGen();
 
-      expect(store.has('x')).toBe(false);
-      expect(store.has('y')).toBe(false);
-      expect(store.has(result)).toBe(true);
-    });
-
-    it('should retry until a non-excluded value is found', () => {
-      const mockFn = vi
-        .fn()
-        .mockReturnValueOnce('excluded')
-        .mockReturnValueOnce('excluded')
-        .mockReturnValueOnce('allowed');
-
-      const exclude = ['excluded'];
-
-      const uniqueGen = uniqueFactory(mockFn, { exclude });
-
-      const result = uniqueGen();
-
-      expect(result).toBe('allowed');
-      expect(mockFn).toHaveBeenCalledTimes(3);
+      expect(store.has('a')).toBe(false);
+      expect(store.has('b')).toBe(false);
+      expect(store.has('c')).toBe(true);
+      expect(result).toBe('c');
     });
 
     it('should throw error after max retries with excluded values', () => {
@@ -150,15 +145,23 @@ describe('unique', () => {
     });
   });
 
-  describe('global', () => {
-    it('should return a unique value with default store', () => {
-      const mockFn = vi.fn().mockReturnValueOnce(1).mockReturnValueOnce(2);
+  describe('unique with global (default) store', () => {
+    afterEach(() => {
+      GLOBAL_STORE.clear();
+    });
 
-      const result1 = unique(mockFn);
-      const result2 = unique(mockFn);
+    it('should return a unique value', () => {
+      const mockFn = vi.fn().mockImplementation(() => {
+        return faker.helpers.arrayElement(['a', 'b', 'c']);
+      });
 
-      expect(result1).toBe(1);
-      expect(result2).toBe(2);
+      unique(mockFn);
+      unique(mockFn);
+      unique(mockFn);
+
+      expect(GLOBAL_STORE.has('a')).toBe(true);
+      expect(GLOBAL_STORE.has('b')).toBe(true);
+      expect(GLOBAL_STORE.has('c')).toBe(true);
     });
 
     it('should work with custom arguments', () => {
@@ -171,3 +174,9 @@ describe('unique', () => {
     });
   });
 });
+
+function invokeNTimes(fn: Function, n: number) {
+  for (let i = 0; i < n; i++) {
+    fn();
+  }
+}

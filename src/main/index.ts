@@ -77,7 +77,7 @@ export function uniqueFactory<Args, Result>(
   };
 }
 
-const GLOBAL_STORE = new Set();
+export const GLOBAL_STORE = new Set();
 
 export function unique<Args, Result>(
   fn: (...args: Args[]) => Result,
