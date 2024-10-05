@@ -118,23 +118,6 @@ console.log(uniqueEmail); // Outputs a unique email address
 - Configure Max Retries and Timeouts: Customize maxRetries and maxTime based on the expected uniqueness and complexity
   of generated values.
 
-### Cookbook
-
-1. Global Uniqueness for User IDs
-
-In some cases, you might need global uniqueness across multiple calls or parts of your application. This example shows
-how to generate unique user IDs that persist across multiple calls by using the global store:
-
-```ts
-import { unique } from '@dpaskhin/unique';
-import { faker } from '@faker-js/faker';
-
-// Generate a globally unique user ID
-const uniqueUserID = unique(faker.string.uuid);
-
-console.log(uniqueUserID); // Outputs a globally unique user ID
-```
-
 ### License
 
 **@dpaskhin/unique** is licensed under the MIT License.
