@@ -5,7 +5,7 @@ import { GLOBAL_STORE, unique, uniqueFactory } from '../main';
 describe('unique', () => {
   describe('uniqueFactory', () => {
     it('should generate unique fake names', () => {
-      const store = new Set();
+      const store = new Set<string>();
 
       const uniqueNameGen = uniqueFactory(faker.person.firstName, { store });
 
@@ -19,11 +19,11 @@ describe('unique', () => {
     });
 
     it('should return unique values', () => {
-      const mockFn = vi.fn().mockImplementation(() => {
+      const mockFn = vi.fn<() => number>().mockImplementation(() => {
         return faker.helpers.arrayElement([1, 2, 3, 4, 5, 6, 7]);
       });
 
-      const store = new Set();
+      const store = new Set<number>();
 
       const uniqueGen = uniqueFactory(mockFn, { store });
 
@@ -34,11 +34,11 @@ describe('unique', () => {
     });
 
     it('should add values to the store', () => {
-      const mockFn = vi.fn().mockImplementation(() => {
+      const mockFn = vi.fn<() => string>().mockImplementation(() => {
         return faker.helpers.arrayElement(['a', 'b', 'c']);
       });
 
-      const store = new Set();
+      const store = new Set<string>();
 
       const uniqueGen = uniqueFactory(mockFn, { store });
 
@@ -65,11 +65,13 @@ describe('unique', () => {
         lastName: faker.person.lastName(),
       };
 
-      const mockFn = vi.fn().mockImplementation(() => {
-        return faker.helpers.arrayElement([user1, user2, user3]);
-      });
+      const mockFn = vi
+        .fn<() => { firstName: string; lastName: string }>()
+        .mockImplementation(() => {
+          return faker.helpers.arrayElement([user1, user2, user3]);
+        });
 
-      const store = new Set();
+      const store = new Set<{ firstName: string; lastName: string }>();
 
       const uniqueGen = uniqueFactory(mockFn, { store });
 
@@ -83,7 +85,7 @@ describe('unique', () => {
     });
 
     it('should throw error after max retries exceeded', () => {
-      const mockFn = vi.fn().mockReturnValue(1);
+      const mockFn = vi.fn<() => number>().mockReturnValue(1);
 
       const uniqueGen = uniqueFactory(mockFn, {
         maxRetries: 3,
@@ -116,12 +118,12 @@ describe('unique', () => {
 
   describe('uniqueFactory with exclude option', () => {
     it('should exclude specified values from results', () => {
-      const mockFn = vi.fn().mockImplementation(() => {
+      const mockFn = vi.fn<() => string>().mockImplementation(() => {
         return faker.helpers.arrayElement(['a', 'b', 'c']);
       });
 
       const exclude = ['a', 'b'];
-      const store = new Set();
+      const store = new Set<string>();
 
       const uniqueGen = uniqueFactory(mockFn, { exclude, store });
 
@@ -134,7 +136,7 @@ describe('unique', () => {
     });
 
     it('should throw error after max retries with excluded values', () => {
-      const mockFn = vi.fn().mockReturnValue('excluded');
+      const mockFn = vi.fn<() => string>().mockReturnValue('excluded');
 
       const exclude = ['excluded'];
 
@@ -151,21 +153,25 @@ describe('unique', () => {
     });
 
     it('should return a unique value', () => {
-      const mockFn = vi.fn().mockImplementation(() => {
+      const mockFn = () => {
         return faker.helpers.arrayElement(['a', 'b', 'c']);
-      });
+      };
 
-      unique(mockFn);
-      unique(mockFn);
-      unique(mockFn);
+      const a = unique(mockFn);
+      const b = unique(mockFn);
+      const c = unique(mockFn);
 
+      expect(a !== b && a !== c && b !== c).toBe(true);
       expect(GLOBAL_STORE.has('a')).toBe(true);
       expect(GLOBAL_STORE.has('b')).toBe(true);
       expect(GLOBAL_STORE.has('c')).toBe(true);
+      expect(GLOBAL_STORE.size).toBe(3);
     });
 
     it('should work with custom arguments', () => {
-      const mockFn = vi.fn((x: number) => x * 2);
+      const mockFn = vi
+        .fn<(x: number) => number>()
+        .mockImplementation(x => x * 2);
 
       const result = unique(mockFn, [5]);
 
