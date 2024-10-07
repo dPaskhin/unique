@@ -33,16 +33,16 @@ type IOptions<
 
 /**
  * Creates a function that generates unique values based on the passed function `fn`.
- * The function ensures uniqueness by storing generated values and retrying if duplicates are found.
+ * Ensures uniqueness by storing generated values and retrying if duplicates are found.
  *
  * @template Fn The type of the function passed to generate values.
  * @template TStringifier The type of the optional stringifier function. When provided, it stringifies the results before storing them in the set.
  *
- * @param {Fn} fn - The function that generates values. This function can accept arguments and return any type of value.
- * @param {IOptions<ReturnType<Fn>, TStringifier>} [options={}] - Optional configuration for controlling the uniqueness generation process, such as the store, retries, and maximum time.
- * @returns {(args: Parameters<Fn>) => ReturnType<Fn>} A new function that generates unique values based on `fn`, ensuring that values are unique across invocations according to the provided configuration.
+ * @param {Fn} fn - The function to generate values
+ * @param {IOptions<ReturnType<Fn>, TStringifier>} [options={}] - Optional configuration for controlling the uniqueness generation process.
+ * @returns {(args: Parameters<Fn>) => ReturnType<Fn>} A new function that generates unique values based on `fn`.
  *
- * @throws {Error} Throws an error if the max retries or max time is exceeded while trying to generate a unique value.
+ * @throws {Error} Throws an error if the max retries or max time is exceeded.
  *
  * @example
  * ```ts
@@ -50,10 +50,10 @@ type IOptions<
  * import { faker } from '@faker-js/faker';
  *
  * // Create a unique generator for first names
- * const uniqueNameGen = uniqueFactory(faker.person.firstName);
+ * const createUniqueName = uniqueFactory(faker.person.firstName);
  *
- * const name1 = uniqueNameGen(); // Generate a unique name
- * const name2 = uniqueNameGen(); // Generate another unique name
+ * const name1 = createUniqueName(); // Create a unique name
+ * const name2 = createUniqueName(); // Create another unique name
  *
  * console.log(name1, name2); // Outputs two different names
  * ```
@@ -63,17 +63,19 @@ type IOptions<
  * import { uniqueFactory } from '@dpaskhin/unique';
  * import { faker } from '@faker-js/faker';
  *
- * // Create a unique generator for objects using a stringifier
- * const personGen = () => ({
+ * // Create a unique generator for users using a stringifier
+ * const createUser = () => ({
  *   name: faker.person.firstName(),
- *   age: faker.date.birthdate().toLocaleDateString(),
+ *   age: faker.number.int({ min: 18, max: 100 }),
  * });
- * const stringifier = (value: unknown) => JSON.stringify(value);
+ * const createUniqueUser = uniqueFactory(createUser, {
+ *   stringifier: value => JSON.stringify(value),
+ * });
  *
- * const person1 = unique(personGen, [], { stringifier });
- * const person2 = unique(personGen, [], { stringifier });
+ * const user1 = createUniqueUser();
+ * const user2 = createUniqueUser();
  *
- * console.log(person1, person2); // Outputs two unique persons
+ * console.log(user1, user2); // Outputs two unique users
  * ```
  */
 export function uniqueFactory<
@@ -149,14 +151,10 @@ export function uniqueFactory<
  * A global store to track unique values across multiple invocations of the `unique` function.
  * This can be shared across different parts of the code to ensure unique values globally.
  *
- * **Example:**
- *
  * @example
  * ```ts
- * const randomValueGen = () => Math.random();
- *
- * const uniqueRandomValue1 = unique(randomValueGen); // Uses GLOBAL_STORE
- * const uniqueRandomValue2 = unique(randomValueGen); // Uses GLOBAL_STORE to ensure global uniqueness
+ * const uniqueRandomValue1 = unique(Math.random); // Uses GLOBAL_STORE
+ * const uniqueRandomValue2 = unique(Math.random); // Uses GLOBAL_STORE to ensure global uniqueness
  *
  * console.log(uniqueRandomValue1, uniqueRandomValue2); // Outputs two unique values
  *
@@ -168,7 +166,7 @@ export const GLOBAL_STORE = new Set();
 
 /**
  * Generates a unique value using the provided function `fn` that takes no arguments.
- * It ensures uniqueness by checking against previous results stored either in the provided `store` or the global store.
+ * Ensures uniqueness by checking against previous results stored either in the provided `store` or the global store.
  *
  * **Note:** The global store is shared across multiple invocations, and values will persist globally.
  * If you need isolation between different parts of your application, you should provide a custom `store` in the options.
@@ -181,10 +179,10 @@ export const GLOBAL_STORE = new Set();
  *
  * @param {Fn} fn - The function to generate values. This function does not accept any arguments.
  * @param {never[]} [args] - No arguments are passed to functions that do not accept arguments. This is automatically inferred.
- * @param {IOptions<ReturnType<Fn>, TStringifier>} [options] - Optional configuration for controlling the uniqueness generation process, such as store, retries, max time, and a stringifier.
+ * @param {IOptions<ReturnType<Fn>, TStringifier>} [options] - Optional configuration for controlling the uniqueness generation process.
  * @returns {ReturnType<Fn>} The unique value generated by the function `fn`.
  *
- * @throws {Error} Throws an error if the max retries or max time is exceeded while trying to generate a unique value.
+ * @throws {Error} Throws an error if the max retries or max time is exceeded.
  *
  * @example
  * ```ts
@@ -192,8 +190,7 @@ export const GLOBAL_STORE = new Set();
  * import { faker } from '@faker-js/faker';
  *
  * // Example with a function that takes no arguments
- * const uniqueBio = unique(faker.person.bio);
- * console.log(uniqueBio); // Outputs a unique user's bio
+ * console.log(unique(faker.person.bio)); // Outputs a unique user's bio
  * ```
  *
  * @example
@@ -219,7 +216,7 @@ export function unique<
 
 /**
  * Generates a unique value using the provided function `fn` that accepts arguments.
- * It ensures uniqueness by checking against previous results stored either in the provided `store` or the global store.
+ * Ensures uniqueness by checking against previous results stored either in the provided `store` or the global store.
  *
  * **Note:** The global store is shared across multiple invocations, and values will persist globally.
  * If you need isolation between different parts of your application, you should provide a custom `store` in the options.
@@ -232,10 +229,10 @@ export function unique<
  *
  * @param {Fn} fn - The function to generate values. This function must accept arguments.
  * @param {Parameters<Fn>} args - The arguments to be passed to the function `fn`.
- * @param {IOptions<ReturnType<Fn>, TStringifier>} [options] - Optional configuration for controlling the uniqueness generation process, such as store, retries, max time, and a stringifier.
+ * @param {IOptions<ReturnType<Fn>, TStringifier>} [options] - Optional configuration for controlling the uniqueness generation process.
  * @returns {ReturnType<Fn>} The unique value generated by the function `fn`.
  *
- * @throws {Error} Throws an error if the max retries or max time is exceeded while trying to generate a unique value.
+ * @throws {Error} Throws an error if the max retries or max time is exceeded.
  *
  * @example
  * ```ts
@@ -243,10 +240,10 @@ export function unique<
  * import { faker } from '@faker-js/faker';
  *
  * // Example with a function that takes arguments
- * const uniqueEmailGen = (firstName: string, lastName: string) => {
+ * const createUniqueEmail = (firstName: string, lastName: string) => {
  *   return faker.internet.email({ firstName, lastName });
  * };
- * const uniqueEmail = unique(uniqueEmailGen, ['John', 'Doe'], { maxRetries: 5 });
+ * const uniqueEmail = unique(createUniqueEmail, ['John', 'Doe'], { maxRetries: 5 });
  * console.log(uniqueEmail); // Outputs a unique random email
  * ```
  *
@@ -256,9 +253,9 @@ export function unique<
  * import { faker } from '@faker-js/faker';
  *
  * // Example with a function that takes arguments and uses a stringifier
- * const userGen = (name: string, age: number) => ({ name, age });
+ * const createUser = (name: string, age: number) => ({ name, age });
  * const uniqueUser = unique(
- *   userGen,
+ *   createUser,
  *   [faker.person.firstName(), faker.number.int({ min: 18, max: 100 })],
  *   {
  *     stringifier: value => JSON.stringify(value), // Stringify the object for uniqueness checks
@@ -296,7 +293,7 @@ export function unique<
  * @param {IOptions<ReturnType<Fn>, TStringifier>} [options={}] - Optional configuration for controlling the uniqueness generation process, including the store, maxRetries, maxTime, and a stringifier.
  * @returns {ReturnType<Fn>} The unique value generated by the function `fn`.
  *
- * @throws {Error} Throws an error if the max retries or max time is exceeded while trying to generate a unique value.
+ * @throws {Error} Throws an error if the max retries or max time is exceeded.
  *
  * @example
  * ```ts
@@ -304,8 +301,7 @@ export function unique<
  * import { faker } from '@faker-js/faker';
  *
  * // Example with a function that takes no arguments
- * const uniqueFirstName = unique(faker.person.firstName);
- * console.log(uniqueFirstName); // Outputs a unique first name
+ * console.log(unique(faker.person.bio)); // Outputs a unique user's bio
  * ```
  *
  * @example
@@ -314,24 +310,25 @@ export function unique<
  * import { faker } from '@faker-js/faker';
  *
  * // Example with a function that takes arguments
- * const uniqueEmailGen = (firstName: string, lastName: string) => {
+ * const createUniqueEmail = (firstName: string, lastName: string) => {
  *   return faker.internet.email({ firstName, lastName });
  * };
- * const uniqueEmail = unique(uniqueEmailGen, ['John', 'Doe'], { maxRetries: 5 });
+ * const uniqueEmail = unique(createUniqueEmail, ['John', 'Doe'], { maxRetries: 5 });
  * console.log(uniqueEmail); // Outputs a unique random email
  * ```
  *
  * @example
  * ```ts
  * import { unique } from '@dpaskhin/unique';
+ * import { faker } from '@faker-js/faker';
  *
- * // Example with a stringifier to handle objects
- * const userGen = (name: string, age: number) => ({ name, age });
+ * // Example with a function that takes arguments and uses a stringifier
+ * const createUser = (name: string, age: number) => ({ name, age });
  * const uniqueUser = unique(
- *   userGen,
+ *   createUser,
  *   [faker.person.firstName(), faker.number.int({ min: 18, max: 100 })],
  *   {
- *     stringifier: value => JSON.stringify(value), // Stringify objects for uniqueness checks
+ *     stringifier: value => JSON.stringify(value), // Stringify the object for uniqueness checks
  *     maxRetries: 10,
  *   }
  * );
