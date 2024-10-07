@@ -1,4 +1,4 @@
-type Stringifier = (value: unknown) => string;
+type Stringifier<Value> = (value: Value) => string;
 
 /**
  * Configuration options for the unique value generation process.
@@ -12,24 +12,22 @@ type Stringifier = (value: unknown) => string;
  * @property {unknown[]} [exclude] - A list of values to be excluded from the result set. When a stringifier is provided, the list will be stringified.
  * @property {TStringifier} [stringifier] - A function to stringify a result value before storing it in the set or checking for uniqueness. If provided, it ensures that the store and exclude list work with stringified values.
  */
-type IOptions<
-  Result,
-  TStringifier extends Stringifier | undefined,
-> = TStringifier extends Stringifier
-  ? {
-      store?: Set<string>;
-      maxRetries?: number;
-      maxTime?: number;
-      exclude?: unknown[];
-      stringifier: TStringifier;
-    }
-  : {
-      store?: Set<Result>;
-      maxRetries?: number;
-      maxTime?: number;
-      exclude?: unknown[];
-      stringifier?: undefined;
-    };
+type IOptions<Result, TStringifier extends Stringifier<Result> | undefined> =
+  TStringifier extends Stringifier<Result>
+    ? {
+        store?: Set<string>;
+        maxRetries?: number;
+        maxTime?: number;
+        exclude?: Result[];
+        stringifier: TStringifier;
+      }
+    : {
+        store?: Set<Result>;
+        maxRetries?: number;
+        maxTime?: number;
+        exclude?: Result[];
+        stringifier?: undefined;
+      };
 
 /**
  * Creates a function that generates unique values based on the passed function `fn`.
@@ -80,7 +78,7 @@ type IOptions<
  */
 export function uniqueFactory<
   Fn extends (...args: any[]) => any,
-  TStringifier extends Stringifier | undefined,
+  TStringifier extends Stringifier<ReturnType<Fn>> | undefined,
 >(
   fn: Fn,
   options: IOptions<ReturnType<Fn>, TStringifier> = {} as IOptions<
@@ -97,7 +95,7 @@ export function uniqueFactory<
   } = options;
 
   if (stringifier) {
-    exclude = exclude.map(value => stringifier(value));
+    exclude = exclude.map(value => stringifier(value)) as ReturnType<Fn>[];
   }
 
   return function (...args) {
@@ -137,7 +135,10 @@ export function uniqueFactory<
 
       currentIterations++;
 
-      if (!store.has(tmpResult) && !exclude.includes(tmpResult)) {
+      if (
+        !store.has(tmpResult) &&
+        !exclude.includes(tmpResult as ReturnType<Fn>)
+      ) {
         store.add(tmpResult);
         break;
       }
@@ -207,7 +208,7 @@ export const GLOBAL_STORE = new Set();
  */
 export function unique<
   Fn extends () => any,
-  TStringifier extends Stringifier | undefined,
+  TStringifier extends Stringifier<ReturnType<Fn>> | undefined,
 >(
   fn: Fn,
   args?: never[],
@@ -267,7 +268,7 @@ export function unique<
  */
 export function unique<
   Fn extends (...args: any[]) => any,
-  TStringifier extends Stringifier | undefined,
+  TStringifier extends Stringifier<ReturnType<Fn>> | undefined,
 >(
   fn: Fn,
   args: Parameters<Fn>,
@@ -337,7 +338,7 @@ export function unique<
  */
 export function unique<
   Fn extends (...args: any[]) => any,
-  TStringifier extends Stringifier | undefined,
+  TStringifier extends Stringifier<ReturnType<Fn>> | undefined,
 >(
   fn: Fn,
   args: Parameters<Fn> = [] as unknown as Parameters<Fn>,
