@@ -5,7 +5,7 @@ import { GLOBAL_STORE, unique, uniqueFactory } from '../main';
 describe('unique', () => {
   describe('uniqueFactory', () => {
     it('should generate unique fake names', () => {
-      const store = new Set<string>();
+      const store = new Set();
 
       const uniqueNameGen = uniqueFactory(faker.person.firstName, { store });
 
@@ -23,7 +23,7 @@ describe('unique', () => {
         return faker.helpers.arrayElement([1, 2, 3, 4, 5, 6, 7]);
       });
 
-      const store = new Set<number>();
+      const store = new Set();
 
       const uniqueGen = uniqueFactory(mockFn, { store });
 
@@ -38,7 +38,7 @@ describe('unique', () => {
         return faker.helpers.arrayElement(['a', 'b', 'c']);
       });
 
-      const store = new Set<string>();
+      const store = new Set();
 
       const uniqueGen = uniqueFactory(mockFn, { store });
 
@@ -71,7 +71,7 @@ describe('unique', () => {
           return faker.helpers.arrayElement([user1, user2, user3]);
         });
 
-      const store = new Set<{ firstName: string; lastName: string }>();
+      const store = new Set();
 
       const uniqueGen = uniqueFactory(mockFn, { store });
 
@@ -123,7 +123,7 @@ describe('unique', () => {
       });
 
       const exclude = ['a', 'b'];
-      const store = new Set<string>();
+      const store = new Set();
 
       const uniqueGen = uniqueFactory(mockFn, { exclude, store });
 
@@ -157,7 +157,7 @@ describe('unique', () => {
         ]);
       };
 
-      const store = new Set<{ key: string }>();
+      const store = new Set();
 
       const uniqueObjGen = uniqueFactory(objectGen, { store });
 
@@ -165,7 +165,7 @@ describe('unique', () => {
 
       expect(store.size).toBe(10);
 
-      const stringifiedStore = new Set<string>();
+      const stringifiedStore = new Set();
 
       const uniqueObjGenWithStringifier = uniqueFactory(objectGen, {
         stringifier: value => JSON.stringify(value),
