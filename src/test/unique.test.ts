@@ -5,7 +5,7 @@ import { GLOBAL_STORE, unique, uniqueFactory } from '../main';
 describe('unique', () => {
   describe('uniqueFactory', () => {
     it('should generate unique fake names', () => {
-      const store = new Set<string>();
+      const store = new Set();
 
       const uniqueNameGen = uniqueFactory(faker.person.firstName, { store });
 
@@ -23,7 +23,7 @@ describe('unique', () => {
         return faker.helpers.arrayElement([1, 2, 3, 4, 5, 6, 7]);
       });
 
-      const store = new Set<number>();
+      const store = new Set();
 
       const uniqueGen = uniqueFactory(mockFn, { store });
 
@@ -38,7 +38,7 @@ describe('unique', () => {
         return faker.helpers.arrayElement(['a', 'b', 'c']);
       });
 
-      const store = new Set<string>();
+      const store = new Set();
 
       const uniqueGen = uniqueFactory(mockFn, { store });
 
@@ -71,7 +71,7 @@ describe('unique', () => {
           return faker.helpers.arrayElement([user1, user2, user3]);
         });
 
-      const store = new Set<{ firstName: string; lastName: string }>();
+      const store = new Set();
 
       const uniqueGen = uniqueFactory(mockFn, { store });
 
@@ -123,7 +123,7 @@ describe('unique', () => {
       });
 
       const exclude = ['a', 'b'];
-      const store = new Set<string>();
+      const store = new Set();
 
       const uniqueGen = uniqueFactory(mockFn, { exclude, store });
 
@@ -144,6 +144,69 @@ describe('unique', () => {
 
       expect(() => uniqueGen()).toThrow('Exceeded maxTries: 3');
       expect(mockFn).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('unique with stringifier', () => {
+    it('ensures uniqueness of stringified objects', () => {
+      const objectGen = (): { key: string } => {
+        return faker.helpers.arrayElement([
+          { key: 'a' },
+          { key: 'b' },
+          { key: 'c' },
+        ]);
+      };
+
+      const store = new Set();
+
+      const uniqueObjGen = uniqueFactory(objectGen, { store });
+
+      invokeNTimes(uniqueObjGen, 10);
+
+      expect(store.size).toBe(10);
+
+      const stringifiedStore = new Set();
+
+      const uniqueObjGenWithStringifier = uniqueFactory(objectGen, {
+        stringifier: value => JSON.stringify(value),
+        store: stringifiedStore,
+      });
+
+      const result1 = uniqueObjGenWithStringifier();
+      const result2 = uniqueObjGenWithStringifier();
+      const result3 = uniqueObjGenWithStringifier();
+
+      expect(result1).not.toEqual(result2);
+      expect(result1).not.toEqual(result3);
+      expect(result2).not.toEqual(result3);
+      expect(stringifiedStore.size).toBe(3);
+
+      expect(() => uniqueObjGenWithStringifier()).toThrow();
+    });
+
+    it('respects the exclude list when using a stringifier', () => {
+      const objectGen = (): { key: string } => {
+        return faker.helpers.arrayElement([
+          { key: 'a' },
+          { key: 'b' },
+          { key: 'c' },
+        ]);
+      };
+
+      const exclude = [{ key: 'a' }];
+
+      const result = uniqueFactory(objectGen, {
+        exclude,
+        stringifier: value => JSON.stringify(value),
+      });
+
+      const result1 = result();
+      const result2 = result();
+
+      expect(result1).not.toEqual(exclude[0]);
+      expect(result2).not.toEqual(exclude[0]);
+
+      expect(() => result()).toThrow();
     });
   });
 
