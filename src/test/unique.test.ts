@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GLOBAL_STORE, unique, uniqueFactory } from '../main';
 
 describe('unique', () => {
@@ -45,24 +45,24 @@ describe('unique', () => {
       invokeNTimes(uniqueGen, 3);
 
       expect(store.size).toBe(3);
-      expect(store.has('a')).toBe(true);
-      expect(store.has('b')).toBe(true);
-      expect(store.has('c')).toBe(true);
+      expect(store.has('"a"')).toBe(true);
+      expect(store.has('"b"')).toBe(true);
+      expect(store.has('"c"')).toBe(true);
       expect(mockFn.mock.calls.length).toBeGreaterThanOrEqual(3);
     });
 
     it('should return unique object values', () => {
       const user1 = {
-        firstName: faker.person.firstName(),
-        lastName: faker.person.lastName(),
+        firstName: unique(faker.person.firstName),
+        lastName: unique(faker.person.lastName),
       };
       const user2 = {
-        firstName: faker.person.firstName(),
-        lastName: faker.person.lastName(),
+        firstName: unique(faker.person.firstName),
+        lastName: unique(faker.person.lastName),
       };
       const user3 = {
-        firstName: faker.person.firstName(),
-        lastName: faker.person.lastName(),
+        firstName: unique(faker.person.firstName),
+        lastName: unique(faker.person.lastName),
       };
 
       const mockFn = vi
@@ -78,9 +78,9 @@ describe('unique', () => {
       invokeNTimes(uniqueGen, 3);
 
       expect(store.size).toBe(3);
-      expect(store.has(user1)).toBe(true);
-      expect(store.has(user2)).toBe(true);
-      expect(store.has(user3)).toBe(true);
+      expect(store.has(JSON.stringify(user1))).toBe(true);
+      expect(store.has(JSON.stringify(user2))).toBe(true);
+      expect(store.has(JSON.stringify(user3))).toBe(true);
       expect(mockFn.mock.calls.length).toBeGreaterThanOrEqual(3);
     });
 
@@ -89,7 +89,7 @@ describe('unique', () => {
 
       const uniqueGen = uniqueFactory(mockFn, {
         maxRetries: 3,
-        store: new Set([1]),
+        store: new Set(['1']),
       });
 
       expect(() => uniqueGen()).toThrow('Exceeded maxTries: 3');
@@ -106,7 +106,7 @@ describe('unique', () => {
         },
         {
           maxTime: 100,
-          store: new Set([1]),
+          store: new Set(['1']),
         }
       );
 
@@ -129,9 +129,9 @@ describe('unique', () => {
 
       const result = uniqueGen();
 
-      expect(store.has('a')).toBe(false);
-      expect(store.has('b')).toBe(false);
-      expect(store.has('c')).toBe(true);
+      expect(store.has('"a"')).toBe(false);
+      expect(store.has('"b"')).toBe(false);
+      expect(store.has('"c"')).toBe(true);
       expect(result).toBe('c');
     });
 
@@ -147,7 +147,7 @@ describe('unique', () => {
     });
   });
 
-  describe('unique with stringifier', () => {
+  describe('unique with and without stringifier', () => {
     it('ensures uniqueness of stringified objects', () => {
       const objectGen = (): { key: string } => {
         return faker.helpers.arrayElement([
@@ -159,7 +159,11 @@ describe('unique', () => {
 
       const store = new Set();
 
-      const uniqueObjGen = uniqueFactory(objectGen, { store });
+      const uniqueObjGen = uniqueFactory(objectGen, {
+        store,
+        // Here we use the identity function to replace the default stringifier.
+        stringifier: value => value as unknown as string,
+      });
 
       invokeNTimes(uniqueObjGen, 10);
 
@@ -168,7 +172,6 @@ describe('unique', () => {
       const stringifiedStore = new Set();
 
       const uniqueObjGenWithStringifier = uniqueFactory(objectGen, {
-        stringifier: value => JSON.stringify(value),
         store: stringifiedStore,
       });
 
@@ -195,10 +198,7 @@ describe('unique', () => {
 
       const exclude = [{ key: 'a' }];
 
-      const result = uniqueFactory(objectGen, {
-        exclude,
-        stringifier: value => JSON.stringify(value),
-      });
+      const result = uniqueFactory(objectGen, { exclude });
 
       const result1 = result();
       const result2 = result();
@@ -211,7 +211,7 @@ describe('unique', () => {
   });
 
   describe('unique with global (default) store', () => {
-    afterEach(() => {
+    beforeEach(() => {
       GLOBAL_STORE.clear();
     });
 
@@ -225,9 +225,9 @@ describe('unique', () => {
       const c = unique(mockFn);
 
       expect(a !== b && a !== c && b !== c).toBe(true);
-      expect(GLOBAL_STORE.has('a')).toBe(true);
-      expect(GLOBAL_STORE.has('b')).toBe(true);
-      expect(GLOBAL_STORE.has('c')).toBe(true);
+      expect(GLOBAL_STORE.has('"a"')).toBe(true);
+      expect(GLOBAL_STORE.has('"b"')).toBe(true);
+      expect(GLOBAL_STORE.has('"c"')).toBe(true);
       expect(GLOBAL_STORE.size).toBe(3);
     });
 
