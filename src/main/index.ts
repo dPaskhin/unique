@@ -216,7 +216,7 @@ export function unique<Fn extends (...args: any[]) => any>(
  * @template Value The type of the value to ensure uniqueness.
  *
  * @param {NotFunction<Value>} value - The plain value to ensure uniqueness for. Must not be a function.
- * @param {IOptions<Value>} [options] - Optional configuration for controlling the uniqueness generation process.
+ * @param {Omit<IOptions<Value>, 'maxRetries' | 'maxTime'>} [options] - Optional configuration for controlling the uniqueness generation process.
  * @returns {Value} The unique value ensured by the `unique` function.
  *
  * @throws {Error} Throws an error if the value already exists in the store.
@@ -233,7 +233,7 @@ export function unique<Fn extends (...args: any[]) => any>(
  */
 export function unique<Value>(
   value: NotFunction<Value>,
-  options?: Omit<IOptions<Value>, 'maxRetries'>
+  options?: Omit<IOptions<Value>, 'maxRetries' | 'maxTime'>
 ): Value;
 
 export function unique<FnOrValue = any>(

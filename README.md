@@ -229,8 +229,6 @@ Ensures a plain value is unique by checking against either a provided or global 
 - value - The plain value (non-functional) to ensure uniqueness for.
 - options - Optional. An object containing configuration options:
   - **store** (Set): A custom store to track unique values. By default, the **GLOBAL_STORE** is used.
-  - **maxTime** (number): The maximum time (in milliseconds) to attempt generating a unique value before throwing an
-    error. Defaults to 50ms.
   - **exclude** (Array): A list of values to exclude. These values will not be added to the store or returned.
   - **stringifier** (function): A function to stringify the value before storing it. Defaults to JSON.stringify.
 

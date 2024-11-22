@@ -39,6 +39,10 @@ unique('foo', ['1']);
 // @ts-expect-error
 unique('foo', { maxRetries: 51 });
 
+// Does not accept maxTime option.
+// @ts-expect-error
+unique('foo', { maxTime: 51 });
+
 expectType<number>(unique(withArgs('foo', 1)));
 
 // Infers valid return type.
