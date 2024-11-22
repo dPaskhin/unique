@@ -1,5 +1,14 @@
 # @dpaskhin/unique
 
+## 1.0.0
+
+### Major Changes
+
+- 51b4d0a: FIRST STABLE VERSION: NO BREAKING CHANGES.
+
+  - Added support for checking uniqueness with plain (non-functional) values.
+  - Simplified and improved documentation.
+
 ## 0.3.0
 
 ### Minor Changes
