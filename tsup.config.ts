@@ -6,4 +6,5 @@ export default defineConfig({
   dts: true,
   outDir: './lib',
   clean: true,
+  minifySyntax: true,
 });

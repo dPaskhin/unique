@@ -1,8 +1,7 @@
 # @dpaskhin/unique
 
-**@dpaskhin/unique** is a TypeScript library that ensures the uniqueness of generated values. It wraps any function to
-reject duplicate values and generate new ones until a unique result is produced. Useful for cases where you need unique
-random values or want to prevent repeated results.
+**@dpaskhin/unique** is a TypeScript library for generating unique values. It ensures no duplicates by rejecting repeats
+and retrying until a new result is found. Ideal for ensuring non-repeated random values.
 
 ## Installation
 
@@ -14,7 +13,7 @@ npm install --save-dev @dpaskhin/unique
 
 ## Features
 
-- Generate unique values based on the output of any function.
+- Generate unique values based on the output of any function or plain value.
 - Supports `custom` stores or `global` storage for uniqueness tracking.
 - Configurable `retry` and `timeout` options.
 - `stringifier` support for custom handling of complex objects during uniqueness checks.
@@ -44,7 +43,7 @@ random data.
 import { unique, uniqueFactory } from '@dpaskhin/unique';
 import { faker } from '@faker-js/faker';
 
-// Outputs a unique first name
+// Outputs a unique first name each time
 console.log(unique(faker.person.firstName));
 console.log(unique(faker.person.firstName));
 console.log(unique(faker.person.firstName));
@@ -116,7 +115,7 @@ console.log(createUniqueRandom());
 
 The **stringifier** option allows you to handle complex objects by converting them into strings for uniqueness checks.
 
-By default, JSON.stringify is used as the stringifier.
+_By default, `JSON.stringify` is used as the stringifier._
 
 ```ts
 import { uniqueFactory } from '@dpaskhin/unique';
@@ -129,7 +128,8 @@ const createUniqueUser = uniqueFactory(
     age: faker.number.int({ min: 18, max: 100 }),
   }),
   {
-    // Here can be any function that takes the return value of the createUser function and converts it to a string.
+    // Here can be any function that takes the return value of the function provided above and converts it to a string.
+    // Or just omit it, JSON.stringify will be used instead.
     stringifier: JsonMarshal.stringify,
   }
 );
@@ -151,12 +151,12 @@ Creates a function that ensures unique results based on the provided function fn
 
 - fn - The function used to generate values.
 - options - Optional. An object containing configuration options:
-  - **store** (Set): A custom store to track unique values. Defaults to a new Set.
+  - **store** (Set): A custom store to track unique values. Defaults to a **new Set**.
   - **maxRetries** (number): The maximum number of retries to generate a unique value before throwing an error.
     Defaults to 50.
   - **maxTime** (number): The maximum time (in milliseconds) to attempt generating a unique value before throwing an
     error. Defaults to 50ms.
-  - **exclude** (Array<ReturnType<Fn>>): A list of values to exclude from the result set. These values will not be
+  - **exclude** (Array): A list of values to exclude from the result set. These values will not be
     returned by the unique generator.
   - **stringifier** (function): A function to stringify a result before storing it. Defaults to JSON.stringify.
 
@@ -170,10 +170,15 @@ A function that generates unique values based on fn with the same signature.
 import { uniqueFactory } from '@dpaskhin/unique';
 import { faker } from '@faker-js/faker';
 
-const uniqueAddress = uniqueFactory(faker.location.city, { maxRetries: 5 });
+const createUniqueUser = uniqueFactory(() => ({
+  name: faker.person.firstName(),
+  age: faker.number.int({ min: 18, max: 100 }),
+}));
 
-// Outputs a unique city name
-console.log(uniqueAddress());
+// Outputs a unique user each time
+console.log(createUniqueUser());
+console.log(createUniqueUser());
+console.log(createUniqueUser());
 ```
 
 ### unique(fn, args, options)
@@ -190,7 +195,7 @@ Generates a unique value by running fn and ensuring uniqueness via either a prov
     Defaults to 50.
   - **maxTime** (number): The maximum time (in milliseconds) to attempt generating a unique value before throwing an
     error. Defaults to 50ms.
-  - **exclude** (Array<ReturnType<Fn>>): A list of values to exclude from the result set. These values will not be
+  - **exclude** (Array): A list of values to exclude from the result set. These values will not be
     returned by the unique generator.
   - **stringifier** (function): A function to stringify a result before storing it. Defaults to JSON.stringify.
 
@@ -211,8 +216,35 @@ const uniqueEmail = unique(faker.internet.email, [
   },
 ]);
 
-// Outputs a unique email address
+// Outputs a unique email
 console.log(uniqueEmail);
+```
+
+### unique(value, options)
+
+Ensures a plain value is unique by checking against either a provided or global store.
+
+#### Parameters
+
+- value - The plain value (non-functional) to ensure uniqueness for.
+- options - Optional. An object containing configuration options:
+  - **store** (Set): A custom store to track unique values. By default, the **GLOBAL_STORE** is used.
+  - **exclude** (Array): A list of values to exclude. These values will not be added to the store or returned.
+  - **stringifier** (function): A function to stringify the value before storing it. Defaults to JSON.stringify.
+
+#### Returns
+
+The unique value provided.
+
+#### Example
+
+```ts
+import { unique } from '@dpaskhin/unique';
+
+// Each time outputs a unique ID string or throws an error
+console.log(unique(window.crypto.randomUUID()));
+console.log(unique(window.crypto.randomUUID()));
+console.log(unique(window.crypto.randomUUID()));
 ```
 
 ### Best Practices
@@ -221,6 +253,7 @@ console.log(uniqueEmail);
   due to shared state.
 - Configure Max Retries and Timeouts: Customize maxRetries and maxTime based on the expected uniqueness and complexity
   of generated values.
+- Avoid using plain values and prefer generating functions for flexibility and retries.
 
 ### License
 

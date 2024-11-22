@@ -20,6 +20,7 @@
       "default": "./lib/index.cjs"
     }
   },
+  "types": "./lib/index.d.ts",
   "sideEffects": false,
   "homepage": "https://github.com/dPaskhin/unique",
   "bugs": {
@@ -34,11 +35,11 @@
   "license": "MIT",
   "scripts": {
     "build": "tsup",
-    "ci": "npm run build && npm run check-format && npm run check-exports && npm run lint && npm run test-coverage",
+    "ci": "npm run build && npm run check-format && npm run check-exports && npm run lint && npm run test-coverage && npm run type-test",
     "format": "prettier --write .",
     "test": "vitest run",
     "test-coverage": "vitest run --coverage",
-    "dev": "vitest",
+    "type-test": "tsd",
     "lint": "tsc",
     "check-format": "prettier --check .",
     "check-exports": "attw --pack .",
@@ -52,8 +53,12 @@
     "@vitest/coverage-v8": "^2.1.1",
     "prettier": "^3.3.3",
     "terser": "^5.34.1",
+    "tsd": "^0.31.2",
     "tsup": "^8.3.0",
     "typescript": "^5.6.2",
     "vitest": "^2.1.1"
+  },
+  "tsd": {
+    "directory": "./src/test/types"
   }
 }

@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GLOBAL_STORE, unique, uniqueFactory } from '../main';
 
 describe('unique', () => {
+  beforeEach(() => {
+    GLOBAL_STORE.clear();
+  });
+
   describe('uniqueFactory', () => {
     it('should generate unique fake names', () => {
       const store = new Set();
@@ -92,7 +96,9 @@ describe('unique', () => {
         store: new Set(['1']),
       });
 
-      expect(() => uniqueGen()).toThrow('Exceeded maxTries: 3');
+      expect(() => uniqueGen()).toThrow(
+        'Exceeded maxTries (3) - store size: 1, retried: 3, duration: 0ms'
+      );
       expect(mockFn).toHaveBeenCalledTimes(3);
     });
 
@@ -110,7 +116,9 @@ describe('unique', () => {
         }
       );
 
-      expect(() => uniqueGen()).toThrow('Exceeded maxTime: 100');
+      expect(() => uniqueGen()).toThrow(
+        'Exceeded maxTime (100) - store size: 1, retried: 10, duration: 100ms'
+      );
 
       vi.useRealTimers();
     });
@@ -142,7 +150,9 @@ describe('unique', () => {
 
       const uniqueGen = uniqueFactory(mockFn, { maxRetries: 3, exclude });
 
-      expect(() => uniqueGen()).toThrow('Exceeded maxTries: 3');
+      expect(() => uniqueGen()).toThrow(
+        'Exceeded maxTries (3) - store size: 0, retried: 3, duration: 0ms'
+      );
       expect(mockFn).toHaveBeenCalledTimes(3);
     });
   });
@@ -211,10 +221,6 @@ describe('unique', () => {
   });
 
   describe('unique with global (default) store', () => {
-    beforeEach(() => {
-      GLOBAL_STORE.clear();
-    });
-
     it('should return a unique value', () => {
       const mockFn = () => {
         return faker.helpers.arrayElement(['a', 'b', 'c']);
@@ -240,6 +246,24 @@ describe('unique', () => {
 
       expect(result).toBe(10);
       expect(mockFn).toHaveBeenCalledWith(5);
+    });
+  });
+
+  describe('unique with plain (non function) values', () => {
+    it('returns the plain value as unique', () => {
+      expect(unique('plain value')).toBe('plain value');
+      expect(() => unique('plain value')).toThrow(
+        'Exceeded maxTries (1) - store size: 1, retried: 1, duration: 0ms'
+      );
+    });
+
+    it('enforces uniqueness for plain values with a custom store', () => {
+      const store = new Set();
+      const uniqueValue = unique('plain value', { store });
+
+      expect(uniqueValue).toBe('plain value');
+      expect(store.size).toBe(1);
+      expect(store.has('"plain value"')).toBe(true);
     });
   });
 });
