@@ -1,5 +1,15 @@
 # @dpaskhin/unique
 
+## 1.1.0
+
+### Minor Changes
+
+- 6a6b161: Export `UniqueError`, with its `storeSize`, `duration`, and `iterations` now exposed as readonly fields, so consumers can catch and inspect uniqueness failures via `instanceof UniqueError` instead of parsing the error message.
+
+### Patch Changes
+
+- 2af6c5e: Fixed the default stringifier: `null`, `NaN`, `Infinity`, and `-Infinity` no longer collide as duplicates of each other, and values that stringify to `undefined` (e.g. `undefined` results) now always produce a real string key. Internal implementation was also split across multiple files for readability; the public API is unchanged.
+
 ## 1.0.0
 
 ### Major Changes
