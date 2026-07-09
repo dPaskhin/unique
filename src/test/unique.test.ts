@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GLOBAL_STORE, unique, uniqueFactory } from '../main';
+import { GLOBAL_STORE, UniqueError, unique, uniqueFactory } from '../main';
 
 describe('unique', () => {
   beforeEach(() => {
@@ -100,6 +100,26 @@ describe('unique', () => {
         'Exceeded maxTries (3) - store size: 1, retried: 3, duration: 0ms'
       );
       expect(mockFn).toHaveBeenCalledTimes(3);
+    });
+
+    it('should throw a UniqueError with structured fields after max retries exceeded', () => {
+      const mockFn = vi.fn<() => number>().mockReturnValue(1);
+
+      const uniqueGen = uniqueFactory(mockFn, {
+        maxRetries: 3,
+        store: new Set(['1']),
+      });
+
+      try {
+        uniqueGen();
+        expect.unreachable();
+      } catch (error) {
+        expect(error).toBeInstanceOf(UniqueError);
+        expect(error).toBeInstanceOf(Error);
+        expect((error as UniqueError).storeSize).toBe(1);
+        expect((error as UniqueError).iterations).toBe(3);
+        expect((error as UniqueError).duration).toBeGreaterThanOrEqual(0);
+      }
     });
 
     it('should throw error after max time exceeded', () => {

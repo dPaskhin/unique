@@ -1,5 +1,5 @@
-import { expectType } from 'tsd';
-import { GLOBAL_STORE, unique, uniqueFactory } from '../../main';
+import { expectAssignable, expectType } from 'tsd';
+import { GLOBAL_STORE, UniqueError, unique, uniqueFactory } from '../../main';
 
 const value: string = '';
 
@@ -105,6 +105,13 @@ unique(withArgs, { store: GLOBAL_STORE });
 // Global store
 // ----------------------------------------
 expectType<Set<unknown>>(GLOBAL_STORE);
+
+// UniqueError
+// ----------------------------------------
+expectAssignable<Error>(new UniqueError('message', 0, 0, 0));
+expectType<number>(new UniqueError('message', 0, 0, 0).storeSize);
+expectType<number>(new UniqueError('message', 0, 0, 0).duration);
+expectType<number>(new UniqueError('message', 0, 0, 0).iterations);
 
 // Factory
 // ----------------------------------------

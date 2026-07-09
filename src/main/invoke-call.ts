@@ -7,8 +7,7 @@ type AnyFn = (...args: any[]) => any;
 
 /**
  * Handles the three call shapes `unique` accepts (no-arg function, function + args, or a plain
- * value) by dispatching straight to `uniqueFactory` — no intermediate object, so the only
- * allocations per call are the ones `uniqueFactory` itself already needs.
+ * value) by dispatching straight to `uniqueFactory`.
  */
 export function invokeUniqueCall(
   fnOrValue: unknown,
@@ -25,7 +24,7 @@ export function invokeUniqueCall(
       fnOptions.store
         ? fnOptions
         : Object.assign({}, fnOptions, { store: GLOBAL_STORE })
-    ).apply(null, (argsOrOptions as unknown[] | undefined) ?? EMPTY_ARRAY);
+    ).apply(null, (argsOrOptions as any) ?? EMPTY_ARRAY);
   }
 
   const valueOptions =

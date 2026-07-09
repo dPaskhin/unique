@@ -9,10 +9,10 @@ import { EMPTY_ARRAY, EMPTY_OPTIONS } from './shared-empty';
  * @template Fn The type of the function passed to generate values.
  *
  * @param {Fn} fn - The function to generate values
- * @param {IOptions<Fn>} [options={}] - Optional configuration for controlling the uniqueness generation process.
+ * @param {IOptions<ReturnType<Fn>>} [options] - Optional configuration for controlling the uniqueness generation process.
  * @returns {(args: Parameters<Fn>) => ReturnType<Fn>} A new function that generates unique values based on `fn`.
  *
- * @throws {Error} Throws an error if the max retries or max time is exceeded.
+ * @throws {UniqueError} Throws if the max retries or max time is exceeded.
  *
  * @example
  * ```ts

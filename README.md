@@ -1,7 +1,22 @@
 # @dpaskhin/unique
 
+[![npm version](https://img.shields.io/npm/v/@dpaskhin/unique.svg)](https://www.npmjs.com/package/@dpaskhin/unique)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/@dpaskhin/unique)](https://bundlephobia.com/package/@dpaskhin/unique)
+[![license](https://img.shields.io/npm/l/@dpaskhin/unique.svg)](https://github.com/dPaskhin/unique/blob/main/LICENSE)
+
 **@dpaskhin/unique** is a TypeScript library for generating unique values. It ensures no duplicates by rejecting repeats
 and retrying until a new result is found. Ideal for ensuring non-repeated random values.
+
+## Contents
+
+- [Installation](#installation)
+- [Features](#features)
+- [Usage](#usage)
+- [API Reference](#api-reference)
+- [Error Handling](#error-handling)
+- [Best Practices](#best-practices)
+- [License](#license)
+- [Contributing](#contributing)
 
 ## Installation
 
@@ -11,13 +26,18 @@ To install **@dpaskhin/unique**, run:
 npm install --save-dev @dpaskhin/unique
 ```
 
+Or, if you use pnpm:
+
+```shell
+pnpm add --save-dev @dpaskhin/unique
+```
+
 ## Features
 
 - Generate unique values based on the output of any function or plain value.
 - Supports `custom` stores or `global` storage for uniqueness tracking.
 - Configurable `retry` and `timeout` options.
 - `stringifier` support for custom handling of complex objects during uniqueness checks.
-- [~600B gzipped.](https://bundlephobia.com/package/@dpaskhin/unique)
 
 ## Usage
 
@@ -115,7 +135,9 @@ console.log(createUniqueRandom());
 
 The **stringifier** option allows you to handle complex objects by converting them into strings for uniqueness checks.
 
-_By default, `JSON.stringify` is used as the stringifier._
+_By default, a `JSON.stringify`-based stringifier is used — it additionally distinguishes `NaN`/`Infinity`/`-Infinity`
+from `null` (which bare `JSON.stringify` otherwise collapses to the same `"null"` key) and always returns a real
+string, even for values like `undefined` for which `JSON.stringify` itself returns `undefined`._
 
 ```ts
 import { uniqueFactory } from '@dpaskhin/unique';
@@ -129,7 +151,7 @@ const createUniqueUser = uniqueFactory(
   }),
   {
     // Here can be any function that takes the return value of the function provided above and converts it to a string.
-    // Or just omit it, JSON.stringify will be used instead.
+    // Or just omit it to use the default stringifier described above.
     stringifier: JsonMarshal.stringify,
   }
 );
@@ -158,7 +180,8 @@ Creates a function that ensures unique results based on the provided function fn
     error. Defaults to 50ms.
   - **exclude** (Array): A list of values to exclude from the result set. These values will not be
     returned by the unique generator.
-  - **stringifier** (function): A function to stringify a result before storing it. Defaults to JSON.stringify.
+  - **stringifier** (function): A function to stringify a result before storing it. Defaults to a `JSON.stringify`-based
+    stringifier (see [Stringifier for Complex Objects](#stringifier-for-complex-objects-or-other-non-primitive-types)).
 
 #### Returns
 
@@ -197,7 +220,8 @@ Generates a unique value by running fn and ensuring uniqueness via either a prov
     error. Defaults to 50ms.
   - **exclude** (Array): A list of values to exclude from the result set. These values will not be
     returned by the unique generator.
-  - **stringifier** (function): A function to stringify a result before storing it. Defaults to JSON.stringify.
+  - **stringifier** (function): A function to stringify a result before storing it. Defaults to a `JSON.stringify`-based
+    stringifier (see [Stringifier for Complex Objects](#stringifier-for-complex-objects-or-other-non-primitive-types)).
 
 #### Returns
 
@@ -230,7 +254,8 @@ Ensures a plain value is unique by checking against either a provided or global 
 - options - Optional. An object containing configuration options:
   - **store** (Set): A custom store to track unique values. By default, the **GLOBAL_STORE** is used.
   - **exclude** (Array): A list of values to exclude. These values will not be added to the store or returned.
-  - **stringifier** (function): A function to stringify the value before storing it. Defaults to JSON.stringify.
+  - **stringifier** (function): A function to stringify the value before storing it. Defaults to a `JSON.stringify`-based
+    stringifier (see [Stringifier for Complex Objects](#stringifier-for-complex-objects-or-other-non-primitive-types)).
 
 #### Returns
 
@@ -238,16 +263,64 @@ The unique value provided.
 
 #### Example
 
+This overload is for checking a value you already have — not a randomly generated one — against a store, e.g. a slug
+derived from user input:
+
 ```ts
 import { unique } from '@dpaskhin/unique';
 
-// Each time outputs a unique ID string or throws an error
-console.log(unique(window.crypto.randomUUID()));
-console.log(unique(window.crypto.randomUUID()));
-console.log(unique(window.crypto.randomUUID()));
+const usedSlugs = new Set();
+
+function toSlug(title: string) {
+  return unique(title.toLowerCase().replace(/\s+/g, '-'), { store: usedSlugs });
+}
+
+console.log(toSlug('Hello World')); // 'hello-world'
+toSlug('Hello World'); // throws UniqueError — slug already taken
 ```
 
-### Best Practices
+### UniqueError
+
+The error class thrown by `uniqueFactory`/`unique` when a unique value could not be produced. Extends `Error`.
+
+#### Fields
+
+- **storeSize** (number): The number of values held by the store at the time of failure.
+- **duration** (number): How long (in milliseconds) generation was attempted before giving up.
+- **iterations** (number): How many times the generator function was called before giving up.
+
+See [Error Handling](#error-handling) below for a usage example.
+
+### GLOBAL_STORE
+
+The module-level `Set` used by `unique()` calls that don't provide a custom `store` option. Shared across your entire
+application by default — see [Global Store](#global-store) above, and [Best Practices](#best-practices) for when to
+avoid it.
+
+## Error Handling
+
+`uniqueFactory`/`unique` throw a `UniqueError` when they can't produce a unique value:
+
+- For function-based generation (`uniqueFactory(fn)`, `unique(fn, args)`), this happens once `maxRetries` or `maxTime`
+  is exceeded.
+- For the plain-value form (`unique(value)`), this happens immediately if `value` is already in the store.
+
+`UniqueError` is exported, so you can check for it specifically instead of parsing the error message:
+
+```ts
+import { unique, UniqueError } from '@dpaskhin/unique';
+
+try {
+  unique(() => Math.floor(Math.random() * 2), [], { maxRetries: 5 });
+} catch (error) {
+  if (error instanceof UniqueError) {
+    console.error(error.message);
+    console.error(error.storeSize, error.iterations, error.duration);
+  }
+}
+```
+
+## Best Practices
 
 - Avoid using the global store when local uniqueness is required, as it may lead to unexpected results
   due to shared state.
@@ -255,10 +328,10 @@ console.log(unique(window.crypto.randomUUID()));
   of generated values.
 - Avoid using plain values and prefer generating functions for flexibility and retries.
 
-### License
+## License
 
 **@dpaskhin/unique** is licensed under the MIT License.
 
-### Contributing
+## Contributing
 
 Contributions are welcome! If you have ideas or improvements, feel free to submit a pull request.
