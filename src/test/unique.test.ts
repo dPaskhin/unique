@@ -247,6 +247,19 @@ describe('unique', () => {
       expect(result).toBe(10);
       expect(mockFn).toHaveBeenCalledWith(5);
     });
+
+    it('uses a provided store instead of the global store', () => {
+      const mockFn = vi.fn<() => string>().mockImplementation(() => {
+        return faker.helpers.arrayElement(['a', 'b', 'c']);
+      });
+
+      const store = new Set();
+
+      invokeNTimes(() => unique(mockFn, [], { store }), 3);
+
+      expect(store.size).toBe(3);
+      expect(GLOBAL_STORE.size).toBe(0);
+    });
   });
 
   describe('unique with plain (non function) values', () => {
@@ -264,6 +277,29 @@ describe('unique', () => {
       expect(uniqueValue).toBe('plain value');
       expect(store.size).toBe(1);
       expect(store.has('"plain value"')).toBe(true);
+    });
+  });
+
+  describe('default stringifier bug fixes', () => {
+    it('does not treat null, NaN, Infinity, and -Infinity as duplicates', () => {
+      const store = new Set();
+
+      expect(unique(null, { store })).toBe(null);
+      expect(Number.isNaN(unique(NaN, { store }))).toBe(true);
+      expect(unique(Infinity, { store })).toBe(Infinity);
+      expect(unique(-Infinity, { store })).toBe(-Infinity);
+
+      expect(store.size).toBe(4);
+    });
+
+    it('returns a real string key when the generated value is undefined', () => {
+      const store = new Set();
+
+      const gen = uniqueFactory(() => undefined, { store });
+
+      expect(gen()).toBe(undefined);
+      expect(store.size).toBe(1);
+      expect(store.has('undefined')).toBe(true);
     });
   });
 });
