@@ -89,6 +89,8 @@ describe('unique', () => {
     });
 
     it('should throw error after max retries exceeded', () => {
+      vi.useFakeTimers();
+
       const mockFn = vi.fn<() => number>().mockReturnValue(1);
 
       const uniqueGen = uniqueFactory(mockFn, {
@@ -100,6 +102,8 @@ describe('unique', () => {
         'Exceeded maxTries (3) - store size: 1, retried: 3, duration: 0ms'
       );
       expect(mockFn).toHaveBeenCalledTimes(3);
+
+      vi.useRealTimers();
     });
 
     it('should throw a UniqueError with structured fields after max retries exceeded', () => {
@@ -164,6 +168,8 @@ describe('unique', () => {
     });
 
     it('should throw error after max retries with excluded values', () => {
+      vi.useFakeTimers();
+
       const mockFn = vi.fn<() => string>().mockReturnValue('excluded');
 
       const exclude = ['excluded'];
@@ -174,6 +180,8 @@ describe('unique', () => {
         'Exceeded maxTries (3) - store size: 0, retried: 3, duration: 0ms'
       );
       expect(mockFn).toHaveBeenCalledTimes(3);
+
+      vi.useRealTimers();
     });
   });
 
@@ -284,10 +292,14 @@ describe('unique', () => {
 
   describe('unique with plain (non function) values', () => {
     it('returns the plain value as unique', () => {
+      vi.useFakeTimers();
+
       expect(unique('plain value')).toBe('plain value');
       expect(() => unique('plain value')).toThrow(
         'Exceeded maxTries (1) - store size: 1, retried: 1, duration: 0ms'
       );
+
+      vi.useRealTimers();
     });
 
     it('enforces uniqueness for plain values with a custom store', () => {
